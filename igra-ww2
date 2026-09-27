@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#F2EFE9"/>
+<title>Экологический след WWII — игра</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=PT+Serif:wght@400;700&family=Unbounded:wght@400;500;600;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2EFE9; --ink:#151412;
+  --red:#C4232C; --red-dark:#931820; --red-soft:#FBEAEA;
+  --green:#3E7C4F; --green-dark:#2B5A38; --green-soft:#EAF4EC;
+  --yellow:#F2C200; --yellow-dark:#B89500; --yellow-ink:#1F1A00;
+  --line:#E3DED4; --card:#FFFFFF; --muted:#7A756B;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'PT Serif',Georgia,serif;-webkit-font-smoothing:antialiased}
+#app{max-width:640px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding:22px 18px 16px}
+.screen{display:flex;flex-direction:column;flex:1;animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.kicker{font-family:'Unbounded';font-weight:600;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--red)}
+.title{font-family:'Playfair Display',serif;font-weight:900;color:var(--red);text-transform:uppercase;line-height:1.05}
+h1.title{font-size:clamp(36px,10vw,54px);margin:10px 0 16px}
+h2.title{font-size:clamp(26px,7vw,36px);margin:8px 0 14px}
+.lead{font-size:16.5px;line-height:1.6;color:#3A372F}
+.muted{color:var(--muted)}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px}
+.rname{font-family:'Unbounded';font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.score-chip{font-family:'Unbounded';font-weight:600;font-size:13px;white-space:nowrap}
+.score-chip b{color:var(--red)}
+.timer{height:8px;border-radius:99px;background:#E7E2D8;overflow:hidden;margin:14px 0 4px}
+.timer i{display:block;height:100%;width:100%;background:var(--red);border-radius:99px;transition:width .12s linear}
+.timer.low i{background:#E03B2F;animation:blink .6s infinite}
+@keyframes blink{50%{opacity:.55}}
+.qcard{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px 18px;margin-top:14px}
+.qnum{font-family:'Unbounded';font-size:10.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.qtext{font-size:19px;line-height:1.45;font-weight:700;margin-bottom:18px}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:8px;padding:15px 16px;font-family:inherit;font-size:16.5px;font-weight:700;color:var(--ink);cursor:pointer;transition:border-color .15s,background .15s,opacity .2s}
+.opt .flag{font-size:24px;line-height:1}
+.opt:hover{border-color:var(--red)}
+.opt .mk{margin-left:auto;font-family:'Unbounded';font-weight:800;font-size:14px;opacity:0}
+.opt.correct{background:var(--green-soft);border-color:var(--green)}
+.opt.correct .mk{opacity:1;color:var(--green)}
+.opt.wrong{background:var(--red-soft);border-color:var(--red)}
+.opt.wrong .mk{opacity:1;color:var(--red)}
+.opt.dim{opacity:.4}
+.opts.locked .opt{cursor:default}
+.opts.locked .opt:hover{border-color:var(--line)}
+.fact{margin-top:16px;background:var(--card);border:1px solid var(--line);border-left:5px solid var(--red);border-radius:0 8px 8px 0;padding:14px 16px}
+.fact .lbl{font-family:'Unbounded';font-weight:600;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--red)}
+.fact p{margin-top:6px;font-size:15px;line-height:1.55}
+.fact.ok{border-left-color:var(--green)}
+.fact.ok .lbl{color:var(--green)}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border:none;border-radius:6px;cursor:pointer;font-family:'Unbounded';font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:14.5px;padding:17px 20px;color:#fff;transition:transform .08s ease}
+.btn:active{transform:translateY(3px)}
+.btn.red{background:var(--red);box-shadow:0 5px 0 var(--red-dark)}
+.btn.red:active{box-shadow:0 2px 0 var(--red-dark)}
+.btn.green{background:var(--green);box-shadow:0 5px 0 var(--green-dark);animation:pulse 1.9s infinite}
+.btn.green:active{box-shadow:0 2px 0 var(--green-dark);animation:none}
+@keyframes pulse{0%{box-shadow:0 5px 0 var(--green-dark),0 0 0 0 rgba(62,124,79,.5)}70%{box-shadow:0 5px 0 var(--green-dark),0 0 0 16px rgba(62,124,79,0)}100%{box-shadow:0 5px 0 var(--green-dark),0 0 0 0 rgba(62,124,79,0)}}
+.btn.yellow{background:var(--yellow);box-shadow:0 5px 0 var(--yellow-dark);color:var(--yellow-ink)}
+.btn.yellow:active{box-shadow:0 2px 0 var(--yellow-dark)}
+.spacer{flex:1}
+.center{text-align:center}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 26px}
+.chip{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:7px 13px;font-size:12.5px;font-family:'Unbounded';font-weight:500}
+.board{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px 20px;text-align:center;margin-top:18px}
+.board .big{font-family:'Unbounded';font-weight:800;font-size:52px;color:var(--red);line-height:1}
+.board .sub{font-family:'Unbounded';font-weight:600;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:8px}
+.board .stats{display:flex;justify-content:center;gap:26px;margin-top:16px}
+.board .stat b{display:block;font-family:'Unbounded';font-weight:800;font-size:20px}
+.board .stat span{font-size:12.5px;color:var(--muted)}
+.rtable{width:100%;border-collapse:collapse;text-align:left}
+.rtable td{padding:12px 2px;border-bottom:1px solid var(--line);font-size:15px}
+.rtable tr:last-child td{border-bottom:none}
+.rtable .rn{font-weight:700}
+.rtable .rn .icon{margin-right:8px}
+.rtable .rn .idx{display:block;font-family:'Unbounded';font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.rtable .rp{font-family:'Unbounded';font-weight:800;font-size:16px;color:var(--red);text-align:right;white-space:nowrap}
+.rtable tr.total td{border-top:2px solid var(--ink);padding-top:14px}
+.rtable tr.total .rn{font-family:'Unbounded';font-weight:600;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.rtable tr.total .rp{font-size:22px}
+.hillwrap{margin-top:18px}
+.hillcap{display:flex;justify-content:space-between;font-family:'Unbounded';font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.hillcap b{color:var(--green)}
+.rank{font-family:'Unbounded';font-weight:800;text-transform:uppercase;color:var(--red);font-size:clamp(22px,6vw,30px);line-height:1.25;margin:8px 0 4px}
+.review{margin-top:20px}
+details summary{cursor:pointer;font-family:'Unbounded';font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:6px 0}
+.rev-item{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:13px 15px;margin-top:10px;font-size:14.5px;line-height:1.5}
+.rev-item.bad{border-left:5px solid var(--red)}
+.rev-item.ok{border-left:5px solid var(--green)}
+.rev-item .rq{font-weight:700}
+.rev-item .ra{margin-top:4px;color:var(--muted)}
+.rev-item .ra b{color:var(--ink)}
+.foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);text-align:center;font-family:'Inter',Arial,sans-serif;font-weight:400;font-size:11px;letter-spacing:.1em;color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+"use strict";
+// ================= НАСТРОЙКИ (легко менять) =================
+const TIME_PER_Q = 15;   // секунд на вопрос
+const BASE_POINTS = 100; // очки за верный ответ
+const SPEED_BONUS = 50;  // макс. бонус за скорость
+const COMBO_BONUS = 25;  // бонус при серии из 3+
+
+// ================= БЕЗОПАСНОЕ ХРАНИЛИЩЕ И ОШИБКИ =================
+const store={
+  get(k){try{return window.localStorage.getItem(k);}catch(e){return null;}},
+  set(k,v){try{window.localStorage.setItem(k,v);}catch(e){}}
+};
+function safe(fn){try{fn();}catch(e){console.error(e);}}
+window.addEventListener("error",function(e){
+  const t=document.createElement("div");
+  t.style.cssText="position:fixed;left:12px;right:12px;bottom:12px;background:#C4232C;color:#fff;font:12px/1.4 Arial,sans-serif;padding:10px 12px;border-radius:8px;z-index:99";
+  t.textContent="Ошибка: "+(e.message||"неизвестно");
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),8000);
+});
+
+// ================= ВОПРОСЫ (4 раунда, 18 вопросов) =================
+const ROUNDS = [
+  { name:"Правда или миф", icon:"⚖️",
+    desc:"Читай факт и решай: правда это или выдумка. Не зевай — время идёт!",
+    questions:[
+      {q:"30 апреля 1945 года, ещё до подписания капитуляции, Гитлер покончил с собой в своём бункере.",
+       options:["Правда","Миф"], correct:0,
+       fact:"Капитуляцию Германия подписала только 8 мая 1945 года — через восемь дней после самоубийства Гитлера."},
+      {q:"Холмы Тевфельсберг и Мон-Кламотт в Берлине создала природа.",
+       options:["Правда","Миф"], correct:1,
+       fact:"Это «Шуттберге» — искусственные холмы, отсыпанные из миллионов кубометров военного и строительного мусора."},
+      {q:"Бомбы на Хиросиму и Нагасаки взорвали в воздухе, поэтому загрязнение почвы там было меньше, чем могло бы быть.",
+       options:["Правда","Миф"], correct:0,
+       fact:"При воздушном взрыве радиоактивное загрязнение почвы значительно меньше, чем после наземного ядерного взрыва."},
+      {q:"Все мины и снаряды в Европе нашли и обезвредили в первые послевоенные годы.",
+       options:["Правда","Миф"], correct:1,
+       fact:"Боеприпасы находят до сих пор — спустя 80 и более лет после окончания войны."},
+      {q:"Атомную бомбу на Нагасаки сбросили 6 августа 1945 года.",
+       options:["Правда","Миф"], correct:1,
+       fact:"6 августа бомбу сбросили на Хиросиму, а на Нагасаки — 9 августа 1945 года."},
+      {q:"Некоторые бывшие военные зоны сегодня стали местами обитания редких видов растений и животных.",
+       options:["Правда","Миф"], correct:0,
+       fact:"Заброшенные военные территории зарастали сами, и некоторые из них получили природоохранное значение."}
+    ]},
+  { name:"Найди страну", icon:"🗺️",
+    desc:"Читай подсказку и выбирай страну, о которой идёт речь.",
+    questions:[
+      {q:"Только за первый год после войны эта страна обезвредила более 10,7 млн мин и около 22,5 млн боеприпасов.",
+       flags:["🇵🇱","🇫🇷","🇮🇹","🇬🇧"],
+       options:["Польша","Франция","Италия","Великобритания"], correct:0,
+       fact:"Разминирование в Польше началось уже в 1945 году, но отдельные находки происходят и сегодня."},
+      {q:"На севере и востоке этой страны старые боеприпасы до сих пор опасны — особенно при строительных работах и лесных пожарах.",
+       flags:["🇵🇱","🇫🇷","🇮🇹","🇩🇪"],
+       options:["Польша","Франция","Италия","Германия"], correct:1,
+       fact:"Во Франции старые снаряды продолжают представлять опасность десятилетиями после войны."},
+      {q:"После войны эта страна восстанавливала свои леса, пострадавшие от боевых действий.",
+       flags:["🇫🇷","🇬🇧","🇮🇹","🇵🇱"],
+       options:["Франция","Великобритания","Италия","Польша"], correct:2,
+       fact:"В Италии особенно пострадали сельскохозяйственные территории и лесные массивы."},
+      {q:"Города этой страны разрушали немецкие бомбардировки, а на её землях остались полигоны и укрепления.",
+       flags:["🇮🇹","🇬🇧","🇫🇷","🇩🇪"],
+       options:["Италия","Великобритания","Франция","Германия"], correct:1,
+       fact:"Некоторые боеприпасы в Великобритании находят до сих пор, в том числе на бывших полигонах."},
+      {q:"Столица этой страны стоит на искусственных холмах из военного мусора.",
+       flags:["🇩🇪","🇵🇱","🇫🇷","🇬🇧"],
+       options:["Германия","Польша","Франция","Великобритания"], correct:0,
+       fact:"Берлинские Шуттберге — Тевфельсберг и Мон-Кламотт — со временем заросли и стали частью городского ландшафта."}
+    ]},
+  { name:"Точные цифры", icon:"🔢",
+    desc:"Проверим память на цифры из презентации. Подсказывать нельзя!",
+    questions:[
+      {q:"Сколько человек погибло в результате атомных бомбардировок и их последствий к концу 1945 года?",
+       options:["Около 20 тысяч","Около 200 тысяч","Около 2 миллионов","Около 20 миллионов"], correct:1,
+       fact:"Хиросима — 6 августа, Нагасаки — 9 августа 1945 года. Всего около 200 тысяч погибших."},
+      {q:"Сколько мин обезвредила Польша только за первый год разминирования?",
+       options:["Более 10,7 тысяч","Более 107 тысяч","Более 10,7 млн","Более 1 млрд"], correct:2,
+       fact:"И ещё около 22,5 млн единиц боеприпасов и неразорвавшихся снарядов."},
+      {q:"Спустя сколько лет после окончания войны всё ещё находят старые боеприпасы?",
+       options:["8 лет","30 лет","50 лет","80 и более лет"], correct:3,
+       fact:"Их находят при строительстве, прокладке дорог, сельхозработах и после сильных дождей."},
+      {q:"В каком году началась масштабная операция по разминированию в Польше?",
+       options:["1945","1949","1953","1961"], correct:0,
+       fact:"Разминирование началось сразу после окончания боевых действий — уже в 1945 году."}
+    ]},
+  { name:"После войны", icon:"🌱",
+    desc:"Финальный раунд — три вопроса о том, как природа и люди жили после 1945 года.",
+    questions:[
+      {q:"Что происходило с заброшенными военными территориями после войны?",
+       options:["Они зарастали — возвращались насекомые, птицы и животные","Их сразу застраивали жилыми кварталами","Их заливали бетоном для безопасности","Там снова проводили военные учения"], correct:0,
+       fact:"Там, где деятельность человека прекращалась, формировались новые природные экосистемы."},
+      {q:"Почему боеприпасы вредят природе, даже если не взрываются?",
+       options:["Металл коррозирует и отдаёт почве химические вещества","Они нагревают почву изнутри","Они отпугивают животных своим видом","Никак — без взрыва они безопасны"], correct:0,
+       fact:"Продукты разложения взрывчатых веществ попадают в почву, поэтому места боёв чистят даже спустя десятилетия."},
+      {q:"Главный вывод презентации: экологический ущерб от войны сохраняется…",
+       options:["…дольше, чем сам конфликт","…менее одного года","…ровно до подписания мирного договора","…только в крупных городах"], correct:0,
+       fact:"Война закончилась более 80 лет назад, а её экологический след мы находим до сих пор."}
+    ]}
+];
+const TOTAL_Q = ROUNDS.reduce((s,r)=>s+r.questions.length,0);
+const MAX_SCORE = TOTAL_Q*(BASE_POINTS+SPEED_BONUS) + (TOTAL_Q-2)*COMBO_BONUS;
+
+// ================= ЭМБЛЕМЫ ФОНАРЕЙ =================
+// Векторные версии, близкие к оригинальным символам Корпусов.
+// Если положить рядом с index.html файлы gl-logo.png и sinestro-logo.png
+// (например, скачанные официальные картинки) — игра возьмёт их автоматически.
+function glEmblem(size){
+  return `<svg viewBox="0 0 48 48" width="${size}" height="${size}" aria-hidden="true" style="flex:0 0 auto">
+    <g fill="#FFFFFF">
+      <circle cx="24" cy="8.6" r="2.7"/>
+      <path d="M6.5 11.5 C10 9.9 14 9.7 18 13 Q24 8.9 30 13 C34 9.7 38 9.9 41.5 11.5 C37.5 17 33 21.5 30.6 27 C29.6 29 29.1 30.8 29 32.4 C33.2 34 36.1 36.6 37 41 L11 41 C11.9 36.6 14.8 34 19 32.4 C18.9 30.8 18.4 29 17.4 27 C15 21.5 10.5 17 6.5 11.5 Z"/>
+    </g>
+  </svg>`;
+}
+function sinEmblem(size){
+  return `<svg viewBox="0 0 48 48" width="${size}" height="${size}" aria-hidden="true" style="flex:0 0 auto">
+    <circle cx="24" cy="24" r="20" fill="#1F1A00"/>
+    <g fill="#F2C200">
+      <circle cx="24" cy="10" r="2.1"/>
+      <path d="M18 13.2 C17.7 10.4 16.5 8 14.5 6.5 C15.8 8.9 16.6 11.2 16.1 13.9 Z"/>
+      <path d="M30 13.2 C30.2 10.4 31.5 8 33.5 6.5 C32.2 8.9 31.4 11.2 31.9 13.9 Z"/>
+      <path d="M8 12.5 C11 10.9 14.4 10.8 18 13.4 Q24 10.8 30 13.4 C33.6 10.8 37 10.9 40 12.5 C36.6 17.4 33 21.6 30.6 27 C29.6 29 29.1 30.8 29 32.4 C32.6 33.6 35 36.4 35.5 39.5 L26.8 39.5 L24 43.2 L21.2 39.5 L12.5 39.5 C13 36.4 15.4 33.6 19 32.4 C18.9 30.8 18.4 29 17.4 27 C15 21.6 11.4 17.4 8 12.5 Z"/>
+    </g>
+  </svg>`;
+}
+// Пытается загрузить png-файл из папки, при отсутствии — рисует векторную версию
+function emblem(kind,size){
+  const isGL = kind==="gl";
+  const file = isGL ? "gl-logo.png" : "sinestro-logo.png";
+  const fb   = isGL ? "glEmblem"    : "sinEmblem";
+  return `<img src="${file}" width="${size}" height="${size}" alt="" style="flex:0 0 auto;opacity:0"
+    onload="this.style.opacity=1"
+    onerror="var s=document.createElement('span');s.innerHTML=${fb}(${size});this.replaceWith(s.firstElementChild)">`;
+}
+
+// ================= СОСТОЯНИЕ =================
+const state = {round:0,qi:0,score:0,streak:0,roundScore:0,roundCorrect:0,
+               totalCorrect:0,roundResults:[],log:[],timer:null,tleft:TIME_PER_Q,phase:"answer"};
+const app = document.getElementById("app");
+
+function plural(n,one,few,many){const a=n%10,b=n%100;
+  return (a===1&&b!==11)?one:(a>=2&&a<=4&&(b<12||b>14))?few:many;}
+
+function render(html){app.innerHTML=`<div class="screen">${html}<div class="foot">made by tkmchw</div></div>`;window.scrollTo(0,0);}
+function resetGame(){state.round=0;state.qi=0;state.score=0;state.streak=0;
+  state.roundScore=0;state.roundCorrect=0;state.totalCorrect=0;state.roundResults=[];state.log=[];
+  if(state.timer)clearInterval(state.timer);state.timer=null;state.phase="answer";}
+
+// ================= ЭКРАНЫ =================
+function screenWelcome(){
+  render(`
+    <div class="kicker">Интерактивная игра</div>
+    <h1 class="title">Экологический след WWII</h1>
+    <p class="lead">Добро пожаловать в игру по экологическому следу после Второй мировой войны! Проверь, что ты запомнил из презентации: <b>${TOTAL_Q} ${plural(TOTAL_Q,"вопрос","вопроса","вопросов")}</b> в <b>4 раундах</b> — и посмотри, как твой личный Шуттберг зарастает зеленью с каждым верным ответом.</p>
+    <div class="chips">
+      <span class="chip">⏱ ${TIME_PER_Q} сек на вопрос</span>
+      <span class="chip">⚡ Очки за скорость</span>
+      <span class="chip">🔥 Бонус за серии</span>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn green" id="start">Начать</button>`);
+  document.getElementById("start").onclick=()=>{resetGame();screenRoundIntro();};
+}
+
+function screenRoundIntro(){
+  const r=ROUNDS[state.round];
+  render(`
+    <div class="spacer"></div>
+    <div class="center">
+      <div class="kicker">Раунд ${state.round+1} из ${ROUNDS.length}</div>
+      <div style="font-size:64px;margin:14px 0">${r.icon}</div>
+      <h2 class="title">${r.name}</h2>
+      <p class="lead">${r.desc}</p>
+      <p class="muted" style="margin-top:10px">${r.questions.length} ${plural(r.questions.length,"вопрос","вопроса","вопросов")}</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn red" id="go">Начать раунд</button>`);
+  document.getElementById("go").onclick=()=>{state.qi=0;state.roundScore=0;state.roundCorrect=0;screenQuestion();};
+}
+
+function screenQuestion(){
+  const r=ROUNDS[state.round], q=r.questions[state.qi];
+  state.tleft=TIME_PER_Q; state.phase="answer";
+  render(`
+    <div class="topbar">
+      <span class="rname">Раунд ${state.round+1} · ${r.name}</span>
+      <span class="score-chip">Очки: <b id="liveScore">${state.score}</b></span>
+    </div>
+    <div class="qcard">
+      <div class="qnum">Вопрос ${state.qi+1} из ${r.questions.length}${state.streak>=2?` · 🔥 серия ${state.streak}`:""}</div>
+      <div class="qtext">${q.q}</div>
+      <div class="opts" id="opts">
+        ${q.options.map((o,i)=>`<button class="opt" data-i="${i}">${q.flags?`<span class="flag">${q.flags[i]}</span>`:""}<span>${o}</span><span class="mk"></span></button>`).join("")}
+      </div>
+      <div id="feedback"></div>
+    </div>
+    <div class="timer" id="timerBox"><i id="tbar"></i></div>`);
+  const tbar=document.getElementById("tbar"), timerBox=document.getElementById("timerBox");
+  const t0=Date.now();
+  state.timer=setInterval(()=>{
+    state.tleft=Math.max(0,TIME_PER_Q-(Date.now()-t0)/1000);
+    tbar.style.width=(state.tleft/TIME_PER_Q*100)+"%";
+    if(state.tleft<=5)timerBox.classList.add("low");
+    if(state.tleft<=0)reveal(null);
+  },100);
+  document.getElementById("opts").addEventListener("click",e=>{
+    const b=e.target.closest(".opt"); if(b)reveal(+b.dataset.i);
+  });
+}
+
+function reveal(chosen){
+  if(state.phase!=="answer")return;
+  state.phase="feedback";
+  if(state.timer){clearInterval(state.timer);state.timer=null;}
+  const r=ROUNDS[state.round], q=r.questions[state.qi];
+  const ok=chosen!==null&&chosen===q.correct;
+  let pts=0;
+  if(ok){
+    state.streak++;
+    pts=BASE_POINTS+Math.round(SPEED_BONUS*state.tleft/TIME_PER_Q)+(state.streak>=3?COMBO_BONUS:0);
+    state.score+=pts;state.roundScore+=pts;state.roundCorrect++;state.totalCorrect++;
+  }else state.streak=0;
+  state.log.push({q:q.q,chosen,correct:q.correct,options:q.options,ok,fact:q.fact,timedOut:chosen===null});
+  const opts=document.getElementById("opts");
+  opts.classList.add("locked");
+  [...opts.children].forEach((b,i)=>{
+    if(i===q.correct){b.classList.add("correct");b.querySelector(".mk").textContent="✓";}
+    else if(i===chosen){b.classList.add("wrong");b.querySelector(".mk").textContent="✕";}
+    else b.classList.add("dim");
+  });
+  const live=document.getElementById("liveScore");if(live)live.textContent=state.score;
+  const head=chosen===null?"Время вышло!":(ok?`Верно! +${pts}`:"Мимо");
+  document.getElementById("feedback").innerHTML=`
+    <div class="fact ${ok?"ok":""}">
+      <div class="lbl">${head}</div><p>${q.fact}</p>
+    </div>
+    <button class="btn red" id="next" style="margin-top:16px">${state.qi+1<r.questions.length?"Дальше":"Итоги раунда"}</button>`;
+  document.getElementById("next").onclick=()=>{
+    state.qi++;
+    if(state.qi<r.questions.length)screenQuestion();else screenRoundResults();
+  };
+}
+
+function screenRoundResults(){
+  const r=ROUNDS[state.round];
+  state.roundResults.push({name:r.name,icon:r.icon,score:state.roundScore,
+                           correct:state.roundCorrect,total:r.questions.length});
+  const last=state.round===ROUNDS.length-1;
+  let totalSoFar=0;
+  for(let i=0;i<=state.round;i++)totalSoFar+=ROUNDS[i].questions.length;
+  const pct=Math.round(100*state.totalCorrect/totalSoFar);
+  render(`
+    <div class="center" style="margin-top:6px"><div class="kicker">Раунд ${state.round+1} завершён</div></div>
+    <div class="board">
+      <div class="big" id="bigScore">0</div>
+      <div class="sub">очков за раунд</div>
+      <div class="stats">
+        <div class="stat"><b>${state.roundCorrect}/${r.questions.length}</b><span>верных</span></div>
+        <div class="stat"><b>${state.score}</b><span>всего очков</span></div>
+        <div class="stat"><b>${state.streak>=3?"🔥"+state.streak:"—"}</b><span>серия</span></div>
+      </div>
+    </div>
+    <div class="hillwrap">
+      <div class="hillcap"><span>Твой Шуттберг</span><b id="hillPct">0% зазеленело</b></div>
+      ${hillSVG()}
+    </div>
+    <div class="spacer"></div>
+    <button class="btn red" id="go" style="margin-top:18px">${last?"Финальные итоги":"Следующий раунд"}</button>`);
+  document.getElementById("go").onclick=()=>{
+    if(last)screenFinal();else{state.round++;screenRoundIntro();}
+  };
+  safe(()=>countUp(document.getElementById("bigScore"),state.roundScore,900));
+  safe(()=>animateHill(pct));
+}
+
+function rankFor(p){
+  if(p>=96)return["Хранитель экологической памяти","Ты запомнил всё. Такой след не спутаешь ни с чем."];
+  if(p>=76)return["Зелёный Тевфельсберг","Отличный результат — холм почти полностью зарос."];
+  if(p>=56)return["Зарастающий Шуттберг","Хорошо! Ещё немного — и зелень победит щебень."];
+  if(p>=31)return["Груды обломков","Есть задел, но стоит перечитать презентацию."];
+  return["Ржавый снаряд","Пока рано. Взгляни ещё раз на слайды — и попробуй снова!"];
+}
+
+function screenFinal(){
+  const pct=Math.round(100*state.totalCorrect/TOTAL_Q);
+  const hillPct=Math.min(100,Math.round(100*state.score/MAX_SCORE));
+  const[rank,sub]=rankFor(pct);
+  let best=+(store.get("wwiiEcoBest")||0);
+  const isRecord=state.score>best;
+  if(isRecord){best=state.score;store.set("wwiiEcoBest",best);}
+  const wrong=state.log.filter(x=>!x.ok);
+  render(`
+    <div class="center" style="margin-top:6px">
+      <div class="kicker">Игра завершена</div>
+      <div class="rank">${rank}</div>
+      <p class="muted" style="font-size:14px">${sub}</p>
+    </div>
+    <div class="board">
+      <table class="rtable">
+        ${state.roundResults.map((r,i)=>`
+          <tr>
+            <td class="rn"><span class="icon">${r.icon}</span>${r.name}<span class="idx">Раунд ${i+1}</span></td>
+            <td class="rp">${r.score}</td>
+          </tr>`).join("")}
+        <tr class="total">
+          <td class="rn">Итого</td>
+          <td class="rp" id="bigScore">0</td>
+        </tr>
+      </table>
+      <div class="sub" style="margin-top:12px">финальное количество баллов за все разделы</div>
+      <div class="stats">
+        <div class="stat"><b>${pct}%</b><span>верных</span></div>
+        <div class="stat"><b>${state.totalCorrect}/${TOTAL_Q}</b><span>ответов</span></div>
+        <div class="stat"><b>${best}</b><span>${isRecord?"🏆 рекорд":"лучший счёт"}</span></div>
+      </div>
+    </div>
+    <div class="hillwrap">
+      <div class="hillcap"><span>Твой Шуттберг · от финального счёта</span><b id="hillPct">0% зазеленело</b></div>
+      ${hillSVG()}
+    </div>
+    <div class="review">
+      <details ${wrong.length?"":"open"}>
+        <summary>${wrong.length?`Разбор ошибок (${wrong.length})`:"Посмотреть все вопросы и факты"}</summary>
+        ${state.log.map(it=>`
+          <div class="rev-item ${it.ok?"ok":"bad"}">
+            <div class="rq">${it.q}</div>
+            <div class="ra">${it.ok?"":(it.timedOut?"<b>Время вышло.</b> ":`<b>Твой ответ:</b> ${it.options[it.chosen]}. `)}<b>Правильно:</b> ${it.options[it.correct]}.</div>
+            <div class="ra">${it.fact}</div>
+          </div>`).join("")}
+      </details>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn green" id="again" style="margin-top:18px">${emblem("gl",22)}<span>Пройти ещё раз</span></button>
+    <button class="btn yellow" id="refuse" style="margin-top:12px">${emblem("sin",22)}<span>Отказаться</span></button>`);
+  document.getElementById("again").onclick=()=>{resetGame();screenRoundIntro();};
+  document.getElementById("refuse").onclick=()=>{screenRefuse();};
+  safe(()=>countUp(document.getElementById("bigScore"),state.score,1100));
+  safe(()=>animateHill(hillPct));
+}
+
+function screenRefuse(){
+  const pct=Math.round(100*state.totalCorrect/TOTAL_Q);
+  render(`
+    <div class="spacer"></div>
+    <div class="center">
+      <div style="margin-bottom:16px">${emblem("sin",96)}</div>
+      <div class="kicker" style="color:var(--yellow-dark)">Жёлтый свет избран</div>
+      <h2 class="title" style="color:var(--ink)">Спасибо за внимание!</h2>
+      <p class="lead">И за прохождение игры по экологическому следу после Второй мировой войны.</p>
+      <p class="muted" style="margin-top:14px;font-size:14.5px">Твой финальный счёт: <b style="color:var(--ink)">${state.score}</b> ${plural(state.score,"очко","очка","очков")} · ${pct}% верных ответов</p>
+      <p class="muted" style="margin-top:20px;font-size:13.5px;font-style:italic">«Иногда отказаться — тоже выбор.<br>Но зелёный свет всегда найдёт тебя.»</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn green" id="backToGame" style="margin-top:18px">${emblem("gl",22)}<span>Всё-таки пройти ещё раз</span></button>`);
+  document.getElementById("backToGame").onclick=()=>{resetGame();screenRoundIntro();};
+}
+
+// ================= ШУТТБЕРГ =================
+function hillSVG(){
+  return `<svg viewBox="0 0 480 150" style="width:100%;display:block">
+    <defs>
+      <linearGradient id="debrisG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B3ADA2"/><stop offset="1" stop-color="#847E73"/></linearGradient>
+      <linearGradient id="grassG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5C9A66"/><stop offset="1" stop-color="#2F5F3C"/></linearGradient>
+      <clipPath id="hillClip"><rect id="hillRect" x="0" y="0" width="0" height="150"/></clipPath>
+    </defs>
+    <rect x="0" y="126" width="480" height="24" fill="#E7E2D8"/>
+    <path d="M0 126 L26 102 L52 110 L84 84 L118 96 L152 68 L188 90 L224 60 L258 86 L292 70 L326 94 L362 78 L398 102 L432 92 L480 118 L480 126 Z" fill="url(#debrisG)"/>
+    <path d="M152 68 L170 78 L152 84 Z" fill="#6F6A61" opacity=".55"/>
+    <path d="M224 60 L240 72 L224 76 Z" fill="#6F6A61" opacity=".55"/>
+    <path d="M292 70 L306 82 L290 84 Z" fill="#6F6A61" opacity=".5"/>
+    <path d="M84 84 L96 94 L82 96 Z" fill="#6F6A61" opacity=".5"/>
+    <circle cx="120" cy="112" r="4" fill="#757066"/>
+    <circle cx="300" cy="108" r="5" fill="#757066"/>
+    <circle cx="200" cy="116" r="3.5" fill="#757066"/>
+    <g clip-path="url(#hillClip)">
+      <path d="M0 126 L26 102 L52 110 L84 84 L118 96 L152 68 L188 90 L224 60 L258 86 L292 70 L326 94 L362 78 L398 102 L432 92 L480 118 L480 126 Z" fill="url(#grassG)"/>
+      <rect x="221" y="38" width="6" height="22" fill="#5B4632"/><circle cx="224" cy="36" r="13" fill="#2F5F3C"/>
+      <rect x="323" y="72" width="5" height="18" fill="#5B4632"/><circle cx="325.5" cy="70" r="10" fill="#3E7C4F"/>
+      <rect x="115" y="76" width="5" height="18" fill="#5B4632"/><circle cx="117.5" cy="74" r="10" fill="#2F5F3C"/>
+      <rect x="395" y="80" width="5" height="18" fill="#5B4632"/><circle cx="397.5" cy="78" r="9" fill="#3E7C4F"/>
+      <circle cx="60" cy="102" r="6" fill="#3E7C4F"/><circle cx="150" cy="66" r="7" fill="#2F5F3C"/>
+      <circle cx="190" cy="88" r="6" fill="#3E7C4F"/><circle cx="260" cy="84" r="6" fill="#3E7C4F"/>
+      <circle cx="330" cy="92" r="6" fill="#2F5F3C"/><circle cx="430" cy="90" r="6" fill="#3E7C4F"/>
+      <circle cx="255" cy="70" r="4" fill="#67A873"/>
+    </g>
+  </svg>`;
+}
+let hillAnim=null;
+function animateHill(pct){
+  const rect=document.getElementById("hillRect"),label=document.getElementById("hillPct");
+  if(!rect||!label)return;
+  const t0=performance.now(),from=0,to=Math.max(0,Math.min(100,pct));
+  if(hillAnim)cancelAnimationFrame(hillAnim);
+  (function step(t){
+    const k=Math.min(1,(t-t0)/900),e=1-Math.pow(1-k,3),v=from+(to-from)*e;
+    rect.setAttribute("width",v/100*480);
+    label.textContent=Math.round(v)+"% зазеленело";
+    if(k<1)hillAnim=requestAnimationFrame(step);
+  })(t0);
+}
+function countUp(el,target,dur){
+  if(!el)return;
+  const t0=performance.now();
+  (function step(t){
+    const k=Math.min(1,(t-t0)/dur);
+    el.textContent=Math.round(target*(1-Math.pow(1-k,3)));
+    if(k<1)requestAnimationFrame(step);
+  })(t0);
+}
+
+screenWelcome();
+</script>
+</body>
+</html>
